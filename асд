@@ -1,0 +1,71 @@
+
+from flask import Flask, request, render_template_string
+import soundfile as sf
+import torch
+from transformers import Speech2TextProcessor, Speech2TextForConditionalGeneration
+import librosa
+
+app = Flask(__name__)
+
+model = Speech2TextForConditionalGeneration.from_pretrained("facebook/s2t-small-librispeech-asr")
+processor = Speech2TextProcessor.from_pretrained("facebook/s2t-small-librispeech-asr")
+
+def convert_sampling_rate(audio_data, current_rate):
+    return librosa.resample(audio_data, orig_sr=current_rate, target_sr=16000), 16000
+
+template = '''
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Speech to Text</title>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-5">Speech to Text</h1>
+        <form method="post" enctype="multipart/form-data" class="mt-3">
+            <input type="file" name="file" accept="audio/*" required>
+            <button type="submit" class="btn btn-primary mt-3">Submit</button>
+        </form>
+        {% if transcription %}
+        <h2 class="mt-5">Transcription</h2>
+        <p id="transcription">{{ transcription }}</p>
+        <button id="readButton">Read Text</button>
+        {% endif %}
+    </div>
+
+    <script>
+        const transcription = document.getElementById('transcription');
+        const readButton = document.getElementById('readButton');
+
+        readButton && readButton.addEventListener('click', () => {
+            const text = transcription.innerText;
+            const speech = new SpeechSynthesisUtterance();
+            speech.lang = 'en-US'; 
+            speech.text = text;
+
+            speechSynthesis.speak(speech);
+        });
+    </script>
+</body>
+</html>
+'''
+
+
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    transcription = ""
+    if request.method == 'POST':
+        audio_file = request.files['file']
+        audio_data, samplerate = sf.read(audio_file)
+        audio_data_resampled, samplerate = convert_sampling_rate(audio_data, samplerate)
+        inputs = processor(audio_data_resampled, sampling_rate=samplerate, return_tensors="pt", padding=True)
+        generated_ids = model.generate(**inputs)
+        transcription = processor.decode(generated_ids[0])
+        transcription = transcription.replace('</s>', '')  
+    return render_template_string(template, transcription=transcription)
+
+
+if __name__ == '__main__':
+    app.run(debug=True)

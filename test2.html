@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Text-to-Speech in English</title>
+</head>
+<body>
+  <h1>Text-to-Speech in English</h1>
+  <textarea id="textToRead" rows="4" cols="50">Enter the text you want to read aloud here.</textarea>
+  <button id="readButton">Read Text</button>
+
+  <script>
+    const textToRead = document.getElementById('textToRead');
+    const readButton = document.getElementById('readButton');
+
+    readButton.addEventListener('click', () => {
+      const text = textToRead.value;
+      const speech = new SpeechSynthesisUtterance();
+      speech.lang = 'en-US'; 
+      speech.text = text;
+
+      speechSynthesis.speak(speech);
+    });
+  </script>
+</body>
+</html>

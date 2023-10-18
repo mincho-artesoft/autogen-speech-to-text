@@ -1,0 +1,41 @@
+
+from flask import Flask, render_template, request, render_template_string
+import soundfile as sf
+import torch
+from transformers import Speech2TextProcessor, Speech2TextForConditionalGeneration
+import librosa
+
+app = Flask(__name__, template_folder="templates")
+
+model = Speech2TextForConditionalGeneration.from_pretrained(
+    "facebook/s2t-small-librispeech-asr")
+processor = Speech2TextProcessor.from_pretrained(
+    "facebook/s2t-small-librispeech-asr")
+
+
+def convert_sampling_rate(audio_data, current_rate):
+    return librosa.resample(audio_data, orig_sr=current_rate, target_sr=16000), 16000
+
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    transcription = ""
+    extra_string = ""
+    combined_string = ""
+    if request.method == 'POST':
+        audio_file = request.files['file']
+        extra_string = request.form['extra_string']
+        print(extra_string)
+        audio_data, samplerate = sf.read(audio_file)
+        audio_data_resampled, samplerate = convert_sampling_rate(
+            audio_data, samplerate)
+        inputs = processor(
+            audio_data_resampled, sampling_rate=samplerate, return_tensors="pt", padding=True)
+        generated_ids = model.generate(**inputs)
+        transcription = processor.decode(generated_ids[0])
+        transcription = transcription.replace('</s>', '')
+        combined_string = f"Use whatever makes more sense to you. 1: \n{transcription}\n. 2: \n{extra_string}\n."
+    return render_template('index.html', transcription=combined_string)
+
+
+if __name__ == '__main__':
+    app.run(debug=True)

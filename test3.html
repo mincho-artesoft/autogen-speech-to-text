@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Запис на аудио</title>
+</head>
+
+<body>
+    <style>
+        button {
+            margin: 10px;
+        }
+    </style>
+
+    <button id="startRecording">Започни запис</button>
+    <button id="stopRecording" disabled>Спри записа</button>
+    <button id="playAudio" style="display: none">Възпроизведи записа</button>
+    <a id="downloadLink" style="display: none">Свали записа</a>
+    <audio id="audioPlayer" controls style="display: none"></audio>
+
+    <script src="https://cdn.rawgit.com/mattdiamond/Recorderjs/08e7abd9/dist/recorder.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.0/lame.all.min.js"></script>
+    <script>
+        let audioContext;
+        let recorder;
+        let audioData = [];
+        let downloadLink = document.getElementById('downloadLink');
+        let startRecordingButton = document.getElementById('startRecording');
+        let stopRecordingButton = document.getElementById('stopRecording');
+        let playAudioButton = document.getElementById('playAudio');
+        let audioPlayer = document.getElementById('audioPlayer');
+
+        if (typeof AudioContext !== 'undefined') {
+            audioContext = new AudioContext();
+        } else if (typeof webkitAudioContext !== 'undefined') {
+            audioContext = new webkitAudioContext();
+        } else {
+            alert('AudioContext не се поддържа в този браузър');
+        }
+
+        function startRecording() {
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(function (stream) {
+                    audioContext.resume().then(function () { 
+                        recorder = new Recorder(audioContext.createMediaStreamSource(stream), { numChannels: 1 });
+                        recorder.record();
+                        startRecordingButton.disabled = true;
+                        stopRecordingButton.disabled = false;
+                    });
+                })
+                .catch(function (err) {
+                    console.error('Грешка при стартиране на записа: ' + err);
+                });
+        }
+
+        function stopRecording() {
+            recorder.stop();
+            recorder.exportWAV(function (blob) {
+                audioData.push(blob);
+                downloadLink.style.display = 'block';
+                downloadLink.href = URL.createObjectURL(new Blob(audioData, { type: 'audio/mp3' }));
+                downloadLink.download = 'recording.mp3';
+                playAudioButton.style.display = 'block';
+            });
+            recorder.clear();
+            startRecordingButton.disabled = false;
+            stopRecordingButton.disabled = true;
+        }
+
+        function playAudio() {
+            audioPlayer.src = URL.createObjectURL(new Blob(audioData, { type: 'audio/mp3' }));
+            audioPlayer.style.display = 'block';
+            audioPlayer.play();
+        }
+
+        startRecordingButton.addEventListener('click', startRecording);
+        stopRecordingButton.addEventListener('click', stopRecording);
+        playAudioButton.addEventListener('click', playAudio);
+    </script>
+</body>
+
+</html>

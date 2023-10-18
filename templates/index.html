@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Speech to Text</title>
+</head>
+
+<body>
+    <style>
+        button {
+            margin: 10px;
+        }
+    </style>
+    <div>
+        <h1>Record voise to text</h1>
+        <button id="startRecording">Start</button>
+        <button id="stopRecording" disabled>Stop</button>
+        <button id="playAudio" style="display: none">Play</button>
+        <audio id="audioPlayer" controls style="display: none"></audio>
+        <a id="downloadLink" style="display: none">Save file</a>
+
+    </div>
+    <h1>Test voise to text</h1>
+    <button id="startButton">start</button>
+    <button id="stopButton">stop</button>
+    <div id="output"></div>
+    <div class="container">
+        <h1 class="mt-5">Speech to Text</h1>
+        <form method="post" enctype="multipart/form-data" class="mt-3">
+            <!-- <input type="file" name="file" accept="audio/*" required> -->
+            <input type="file" id="file_input" name="file" accept="audio/*" required>
+            <!--             <input type="hidden" name="file" id="audioUrl" accept="audio/*" required> -->
+            <input type="text" name="extra_string" id="extraString" placeholder="Enter a string" required>
+
+            <button type="submit" class="btn btn-primary mt-3">Submit</button>
+        </form>
+        {% if transcription %}
+        <h2 class="mt-5">Transcription</h2>
+        <p id="transcription">{{ transcription }}</p>
+        <button id="readButton">Read Text</button>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.rawgit.com/mattdiamond/Recorderjs/08e7abd9/dist/recorder.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.0/lame.all.min.js"></script>
+    <script>
+
+        let audioContext;
+        let recorder;
+        let audioData = [];
+        let downloadLink = document.getElementById('downloadLink');
+        let startRecordingButton = document.getElementById('startRecording');
+        let stopRecordingButton = document.getElementById('stopRecording');
+        let playAudioButton = document.getElementById('playAudio');
+        let audioPlayer = document.getElementById('audioPlayer');
+
+        if (typeof AudioContext !== 'undefined') {
+            audioContext = new AudioContext();
+        } else if (typeof webkitAudioContext !== 'undefined') {
+            audioContext = new webkitAudioContext();
+        } else {
+            alert('AudioContext not supported');
+        }
+
+        function startRecording() {
+            recognition.start();
+
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(function (stream) {
+                    audioContext.resume().then(function () {
+                        recorder = new Recorder(audioContext.createMediaStreamSource(stream), { numChannels: 1 });
+                        recorder.record();
+                        startRecordingButton.disabled = true;
+                        stopRecordingButton.disabled = false;
+                    });
+                })
+                .catch(function (err) {
+                    console.error('File err: ' + err);
+                });
+        }
+
+        function stopRecording() {
+            recognition.stop();
+
+            recorder.stop();
+            recorder.exportWAV(function (blob) {
+                audioData.push(blob);
+                downloadLink.style.display = 'block';
+                downloadLink.href = URL.createObjectURL(new Blob(audioData, { type: 'audio/mp3' }));
+                
+                downloadLink.download = 'recording.mp3';
+                playAudioButton.style.display = 'block';
+                
+                let fileName = 'test.mp3'
+                let file = new File([blob], fileName, { type: "audio/mp3", lastModified: new Date().getTime() }, 'utf-8');
+                let container = new DataTransfer(); 
+                container.items.add(file);
+                document.querySelector('#file_input').files = container.files;
+                file = null
+
+            });
+            recorder.clear();
+            startRecordingButton.disabled = false;
+            stopRecordingButton.disabled = true;
+        }
+
+        function playAudio() {
+            audioPlayer.src = URL.createObjectURL(new Blob(audioData, { type: 'audio/mp3' }));
+            audioPlayer.style.display = 'block';
+            audioPlayer.play();
+        }
+
+        startRecordingButton.addEventListener('click', startRecording);
+        stopRecordingButton.addEventListener('click', stopRecording);
+        playAudioButton.addEventListener('click', playAudio);
+        ///////////
+        const startButton = document.getElementById('startButton');
+        const stopButton = document.getElementById('stopButton');
+        const outputDiv = document.getElementById('output');
+        const transcription = document.getElementById('transcription');
+        const readButton = document.getElementById('readButton');
+        const extraStringInput = document.getElementById('extraString');
+
+        let recognition = new webkitSpeechRecognition();
+
+        recognition.lang = 'en-EN';
+
+        startButton.addEventListener('click', () => {
+            recognition.start();
+        });
+
+        stopButton.addEventListener('click', () => {
+            recognition.stop();
+        });
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            outputDiv.textContent = transcript;
+            console.log(typeof transcript)
+            console.log(transcript)
+            extraStringInput.value = transcript
+        };
+
+        ////////////
+
+        readButton && readButton.addEventListener('click', () => {
+            const text = transcription.innerText;
+            const speech = new SpeechSynthesisUtterance();
+            speech.lang = 'en-US';
+            speech.text = text;
+
+            speechSynthesis.speak(speech);
+        });
+    </script>
+</body>
+
+</html>
