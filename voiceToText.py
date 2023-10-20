@@ -7,7 +7,7 @@ import json
 import openai
 
 
-openai.api_key = ''
+openai.api_key = 'sk-'
 
 app = Flask(__name__, template_folder="templates")
 
@@ -54,3 +54,13 @@ def index():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+"""   
+      response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "user", "content": combined_string}]
+        )
+        print(response)
+        response_text = response['choices'][0]['message']['content']
+          """

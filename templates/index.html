@@ -29,12 +29,10 @@
     <div class="container">
         <h1 class="mt-5">Speech to Text</h1>
         <form method="post" enctype="multipart/form-data" class="mt-3">
-            <!-- <input type="file" name="file" accept="audio/*" required> -->
             <input type="file" id="file_input" name="file" accept="audio/*" required>
-            <!--             <input type="hidden" name="file" id="audioUrl" accept="audio/*" required> -->
             <input type="text" name="extra_string" id="extraString" placeholder="Enter a string" required>
 
-            <button type="submit" class="btn btn-primary mt-3">Submit</button>
+            <button type="submit" id="submitButon" class="btn btn-primary mt-3">Submit</button>
         </form>
         {% if transcription %}
         <h2 class="mt-5">Transcription</h2>
@@ -46,6 +44,7 @@
     <script src="https://cdn.rawgit.com/mattdiamond/Recorderjs/08e7abd9/dist/recorder.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.0/lame.all.min.js"></script>
     <script>
+        let submitButton = document.getElementById('submitButon');
 
         let audioContext;
         let recorder;
@@ -82,20 +81,18 @@
         }
 
         function stopRecording() {
-            recognition.stop();
-
             recorder.stop();
             recorder.exportWAV(function (blob) {
                 audioData.push(blob);
                 downloadLink.style.display = 'block';
                 downloadLink.href = URL.createObjectURL(new Blob(audioData, { type: 'audio/mp3' }));
-                
+
                 downloadLink.download = 'recording.mp3';
                 playAudioButton.style.display = 'block';
-                
+
                 let fileName = 'test.mp3'
                 let file = new File([blob], fileName, { type: "audio/mp3", lastModified: new Date().getTime() }, 'utf-8');
-                let container = new DataTransfer(); 
+                let container = new DataTransfer();
                 container.items.add(file);
                 document.querySelector('#file_input').files = container.files;
                 file = null
@@ -115,7 +112,10 @@
         startRecordingButton.addEventListener('click', startRecording);
         stopRecordingButton.addEventListener('click', stopRecording);
         playAudioButton.addEventListener('click', playAudio);
+
+
         ///////////
+
         const startButton = document.getElementById('startButton');
         const stopButton = document.getElementById('stopButton');
         const outputDiv = document.getElementById('output');
@@ -136,11 +136,17 @@
         });
 
         recognition.onresult = (event) => {
+            stopRecording();
             const transcript = event.results[0][0].transcript;
             outputDiv.textContent = transcript;
             console.log(typeof transcript)
             console.log(transcript)
             extraStringInput.value = transcript
+
+            function clickSubmitButton() {
+                submitButton.click();
+            }
+            setTimeout(clickSubmitButton, 1000); 
         };
 
         ////////////
@@ -153,6 +159,17 @@
 
             speechSynthesis.speak(speech);
         });
+
+        document.addEventListener("DOMContentLoaded", () => {
+            if (transcription.innerHTML.length > 0) {
+                const text = transcription.innerText;
+                const speech = new SpeechSynthesisUtterance();
+                speech.lang = 'en-US';
+                speech.text = text;
+
+                speechSynthesis.speak(speech);
+            }
+        })
     </script>
 </body>
 
