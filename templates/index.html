@@ -9,8 +9,71 @@
 
 <body>
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            margin: 20px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
         button {
-            margin: 10px;
+            background-color: #008CBA;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        button:hover {
+            background-color: #005f5f;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        input[type="file"],
+        input[type="text"] {
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #cccccc;
+            border-radius: 4px;
+        }
+
+        #audioPlayer,
+        #downloadLink {
+            margin-top: 10px;
+        }
+
+        #downloadLink {
+            text-decoration: none;
+            color: #008CBA;
         }
     </style>
     <div>
@@ -22,15 +85,10 @@
         <a id="downloadLink" style="display: none">Save file</a>
 
     </div>
-    <h1>Test voise to text</h1>
-    <button id="startButton">start</button>
-    <button id="stopButton">stop</button>
-    <div id="output"></div>
     <div class="container">
         <h1 class="mt-5">Speech to Text</h1>
         <form method="post" enctype="multipart/form-data" class="mt-3">
             <input type="file" id="file_input" name="file" accept="audio/*" required>
-            <input type="text" name="extra_string" id="extraString" placeholder="Enter a string" required>
 
             <button type="submit" id="submitButon" class="btn btn-primary mt-3">Submit</button>
         </form>
@@ -44,8 +102,8 @@
     <script src="https://cdn.rawgit.com/mattdiamond/Recorderjs/08e7abd9/dist/recorder.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.0/lame.all.min.js"></script>
     <script>
+        
         let submitButton = document.getElementById('submitButon');
-
         let audioContext;
         let recorder;
         let audioData = [];
@@ -64,7 +122,7 @@
         }
 
         function startRecording() {
-            recognition.start();
+           recognition.start();
 
             navigator.mediaDevices.getUserMedia({ audio: true })
                 .then(function (stream) {
@@ -115,38 +173,18 @@
 
 
         ///////////
-
-        const startButton = document.getElementById('startButton');
-        const stopButton = document.getElementById('stopButton');
-        const outputDiv = document.getElementById('output');
         const transcription = document.getElementById('transcription');
         const readButton = document.getElementById('readButton');
-        const extraStringInput = document.getElementById('extraString');
 
         let recognition = new webkitSpeechRecognition();
 
-        recognition.lang = 'en-EN';
-
-        startButton.addEventListener('click', () => {
-            recognition.start();
-        });
-
-        stopButton.addEventListener('click', () => {
-            recognition.stop();
-        });
-
         recognition.onresult = (event) => {
             stopRecording();
-            const transcript = event.results[0][0].transcript;
-            outputDiv.textContent = transcript;
-            console.log(typeof transcript)
-            console.log(transcript)
-            extraStringInput.value = transcript
 
             function clickSubmitButton() {
                 submitButton.click();
             }
-            setTimeout(clickSubmitButton, 1000); 
+            setTimeout(clickSubmitButton, 1000);
         };
 
         ////////////
