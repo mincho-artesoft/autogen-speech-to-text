@@ -87,22 +87,19 @@
     </div>
     <div class="container">
         <h1 class="mt-5">Speech to Text</h1>
-        <form method="post" enctype="multipart/form-data" class="mt-3">
-            <input type="file" id="file_input" name="file" accept="audio/*" required>
+        <input type="file" id="file_input" name="file" accept="audio/*" required hidden>
+        <button type="submit" id="submitButon" class="btn btn-primary mt-3">Submit</button>
 
-            <button type="submit" id="submitButon" class="btn btn-primary mt-3">Submit</button>
-        </form>
-        {% if transcription %}
-        <h2 class="mt-5">Transcription</h2>
-        <p id="transcription">{{ transcription }}</p>
-        <button id="readButton">Read Text</button>
-        {% endif %}
+        <audio controls id="audio-player2" hidden>
+            <source src="" type="audio/wav">
+        </audio>
+
     </div>
 
     <script src="https://cdn.rawgit.com/mattdiamond/Recorderjs/08e7abd9/dist/recorder.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.0/lame.all.min.js"></script>
     <script>
-        
+
         let submitButton = document.getElementById('submitButon');
         let audioContext;
         let recorder;
@@ -122,7 +119,7 @@
         }
 
         function startRecording() {
-           recognition.start();
+            recognition.start();
 
             navigator.mediaDevices.getUserMedia({ audio: true })
                 .then(function (stream) {
@@ -153,7 +150,12 @@
                 let container = new DataTransfer();
                 container.items.add(file);
                 document.querySelector('#file_input').files = container.files;
-                file = null
+
+                let fileName2 = 'test.wav'
+                let file2 = new File([blob], fileName2, { type: "audio/wav", lastModified: new Date().getTime() }, 'utf-8');
+                let container2 = new DataTransfer();
+                container2.items.add(file2);
+                document.querySelector('#file_input2').files = container2.files;
 
             });
             recorder.clear();
@@ -173,8 +175,6 @@
 
 
         ///////////
-        const transcription = document.getElementById('transcription');
-        const readButton = document.getElementById('readButton');
 
         let recognition = new webkitSpeechRecognition();
 
@@ -189,16 +189,16 @@
 
         ////////////
 
-        readButton && readButton.addEventListener('click', () => {
+     /*    readButton && readButton.addEventListener('click', () => {
             const text = transcription.innerText;
             const speech = new SpeechSynthesisUtterance();
             speech.lang = 'en-US';
             speech.text = text;
 
             speechSynthesis.speak(speech);
-        });
+        }); */
 
-        document.addEventListener("DOMContentLoaded", () => {
+ /*        document.addEventListener("DOMContentLoaded", () => {
             if (transcription.innerHTML.length > 0) {
                 const text = transcription.innerText;
                 const speech = new SpeechSynthesisUtterance();
@@ -207,6 +207,30 @@
 
                 speechSynthesis.speak(speech);
             }
+        }) */
+
+
+
+        submitButton.addEventListener("click", () => {
+            let formData = new FormData();
+            formData.append("file", document.querySelector('#file_input').files[0])
+            console.log(document.querySelector('#file_input').files[0])
+            const postOptions = {
+                method: "POST",
+                files: formData,
+                body: formData
+            };
+            fetch("/saveaudio", postOptions)
+                .then(() => {
+                    fetch("/audio", { method: "GET" })
+                        .then(response => response.blob())
+                        .then((blob) => {
+                            const audioPlayer2 = document.getElementById('audio-player2');
+                            console.log(typeof blob)
+                            audioPlayer2.src = URL.createObjectURL(blob);
+                            audioPlayer2.play();
+                        })
+                })
         })
     </script>
 </body>
