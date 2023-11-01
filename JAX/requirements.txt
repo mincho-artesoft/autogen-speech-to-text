@@ -20,3 +20,4 @@ bnnumerizer
 bnunicodenormalizer
 gruut
 sentencepiece
+cached_property

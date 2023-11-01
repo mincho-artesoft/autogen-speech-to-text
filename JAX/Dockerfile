@@ -2,7 +2,7 @@ FROM python:3.8
 
 WORKDIR /app
 
-RUN pip install --no-cache-dir --upgrade setuptools wheel
+RUN pip3 install --no-cache-dir --upgrade setuptools wheel
 
 RUN rm -rf /root/.cache/pip && \
     rm -rf /root/.cache/pipenv
@@ -15,10 +15,8 @@ RUN apt-get update && apt-get install -y ffmpeg
 
 COPY requirements.txt /app/
 
-RUN apt-get update && apt-get install -y gcc libsndfile1
-
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+    pip3 install --no-cache-dir -r requirements.txt
 
 COPY . /app/
 
