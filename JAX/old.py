@@ -14,8 +14,11 @@ openai.api_key = 'sg'
 app = Flask(__name__, template_folder="templates")
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
+
 """  """
 whisper_processor = WhisperProcessor.from_pretrained("openai/whisper-large-v2")
+
+print(device)
 
 pipe = pipeline(
     "automatic-speech-recognition",
@@ -28,7 +31,7 @@ pipe.model.config.forced_decoder_ids = whisper_processor.get_decoder_prompt_ids(
     language="english", task="translate")
 """  """
 
-synthesiser = pipeline("text-to-speech", "microsoft/speecht5_tts")
+synthesiser = pipeline("text-to-speech", "microsoft/speecht5_tts", device=device)
 
 embeddings_dataset = load_dataset(
     "Matthijs/cmu-arctic-xvectors", split="validation")

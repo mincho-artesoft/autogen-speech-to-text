@@ -7,6 +7,8 @@ import openai
 from pydub import AudioSegment
 from datasets import load_dataset
 import datetime
+from whisper_jax import FlaxWhisperPipline
+import jax.numpy as jnp
 
 
 openai.api_key = 'sg'
@@ -15,20 +17,14 @@ app = Flask(__name__, template_folder="templates")
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 """  """
-whisper_processor = WhisperProcessor.from_pretrained("openai/whisper-large-v2")
 
-pipe = pipeline(
-    "automatic-speech-recognition",
-    model="openai/whisper-large-v2",
-    chunk_length_s=30,
-    device=device,
-)
+print(device)
+pipe = FlaxWhisperPipline("openai/whisper-large-v2", dtype=jnp.float16)
 
-pipe.model.config.forced_decoder_ids = whisper_processor.get_decoder_prompt_ids(
-    language="english", task="translate")
+
 """  """
 
-synthesiser = pipeline("text-to-speech", "microsoft/speecht5_tts")
+synthesiser = pipeline("text-to-speech", "microsoft/speecht5_tts", device=device)
 
 embeddings_dataset = load_dataset(
     "Matthijs/cmu-arctic-xvectors", split="validation")
@@ -52,27 +48,23 @@ def index():
 
 @app.route('/saveaudio', methods=['POST'])
 def indexs():
-    print("11111")
     response_text = ""
     prediction = ""
     if request.method == 'POST':
-        print("22222")
         audio_file = request.files['file']
-        print("3333")
         audio_data, samplerate = sf.read(audio_file)
-        print("44444")
-        audio_data_resampled, samplerate = convert_sampling_rate(
-            audio_data, samplerate)
-        print("55555")
+       
+        sf.write("audio.mp3", audio_data, samplerate)
         current_datetime = datetime.datetime.now()
         print("current_datetime")
         print(current_datetime)
-        prediction = pipe(audio_data_resampled.copy(), batch_size=8)["text"]
+        gen = pipe("audio.mp3", task="translate")
+        prediction = gen["text"]
         print(prediction)
         current_datetime2 = datetime.datetime.now()
         print("current_datetime2")
         print(current_datetime2-current_datetime)
-
+       # prediction = pipe(audio_data_resampled.copy(), batch_size=8)["text"]
 
         current_datetime3 = datetime.datetime.now()
         print("current_datetime3")
@@ -84,7 +76,6 @@ def indexs():
         print(current_datetime4 - current_datetime3)
         sf.write("speech.wav", speech["audio"],
                  samplerate=speech["sampling_rate"])
-        print(prediction)
         return "200"
 
 
