@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Speech to Text</title>
+</head>
+
+<body>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            margin: 20px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            background-color: #008CBA;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        button:hover {
+            background-color: #005f5f;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        input[type="file"],
+        input[type="text"] {
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #cccccc;
+            border-radius: 4px;
+        }
+
+        #audioPlayer,
+        #downloadLink {
+            margin-top: 10px;
+        }
+
+        #downloadLink {
+            text-decoration: none;
+            color: #008CBA;
+        }
+    </style>
+    <div>
+        <h1>Record voise to text</h1>
+        <button id="startRecording">Start</button>
+        <button id="stopRecording" disabled>Stop</button>
+        <button id="playAudio" style="display: none">Play</button>
+        <audio id="audioPlayer" controls style="display: none"></audio>
+        <a id="downloadLink" style="display: none">Save file</a>
+
+    </div>
+    <div class="container">
+        <h1 class="mt-5">Speech to Text</h1>
+        <input type="file" id="file_input" name="file" accept="audio/*" required hidden>
+        <button type="submit" id="submitButon" class="btn btn-primary mt-3">Submit</button>
+
+        <audio controls id="audio-player2" hidden>
+            <source src="" type="audio/wav">
+        </audio>
+    </div>
+    <p id="myParagraph">Test</p>
+    <script src="https://cdn.rawgit.com/mattdiamond/Recorderjs/08e7abd9/dist/recorder.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.0/lame.all.min.js"></script>
+    <script>
+
+        let submitButton = document.getElementById('submitButon');
+        let audioContext;
+        let audioContextTemp;
+        let recorder;
+        let recorderTemp;
+        let audioData = [];
+        let downloadLink = document.getElementById('downloadLink');
+        let startRecordingButton = document.getElementById('startRecording');
+        let stopRecordingButton = document.getElementById('stopRecording');
+        let playAudioButton = document.getElementById('playAudio');
+        let audioPlayer = document.getElementById('audioPlayer');
+
+        if (typeof AudioContext !== 'undefined') {
+            audioContext = new AudioContext();
+            audioContextTemp = new AudioContext();
+        } else if (typeof webkitAudioContext !== 'undefined') {
+            audioContext = new webkitAudioContext();
+            audioContextTemp = new webkitAudioContext();
+        } else {
+            alert('AudioContext not supported');
+        }
+
+        function startRecording() {
+            recognition2.start();
+            startRecordingTemp();
+
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(function (stream) {
+                    audioContext.resume().then(function () {
+                        recorder = new Recorder(audioContext.createMediaStreamSource(stream), { numChannels: 1 });
+                        recorder.record();
+                        startRecordingButton.disabled = true;
+                        stopRecordingButton.disabled = false;
+                    });
+                })
+                .catch(function (err) {
+                    console.error('File err: ' + err);
+                });
+            setTimeout(stopRecording, 30000);
+        }
+
+        function stopRecording() {
+            recorder.stop();
+            recorder.exportWAV(function (blob) {
+                audioData.push(blob);
+                downloadLink.style.display = 'block';
+                downloadLink.href = URL.createObjectURL(new Blob(audioData, { type: 'audio/mp3' }));
+
+                downloadLink.download = 'recording.mp3';
+                playAudioButton.style.display = 'block';
+
+                let fileName = 'test.mp3'
+                let file = new File([blob], fileName, { type: "audio/mp3", lastModified: new Date().getTime() }, 'utf-8');
+                let container = new DataTransfer();
+                container.items.add(file);
+                document.querySelector('#file_input').files = container.files;
+            });
+            audioData = [];
+            recorder.clear();
+            startRecordingButton.disabled = false;
+            stopRecordingButton.disabled = true;
+        }
+
+        function startRecordingTemp() {
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(function (stream) {
+                    audioContextTemp.resume().then(function () {
+                        recorderTemp = new Recorder(audioContextTemp.createMediaStreamSource(stream), { numChannels: 1 });
+                        recorderTemp.record();
+                    });
+                })
+                .catch(function (err) {
+                    console.error('File err: ' + err);
+                });
+        }
+
+        function stopRecordingTemp() {
+            recorderTemp.stop();
+            recorderTemp.exportWAV(function (blob) {
+
+                let fileName = 'test.mp3'
+                let file = new File([blob], fileName, { type: "audio/mp3", lastModified: new Date().getTime() }, 'utf-8');
+                let container = new DataTransfer();
+                container.items.add(file);
+                document.querySelector('#file_input').files = container.files;
+            });
+            recorder.clear();
+        }
+
+        function playAudio() {
+            audioPlayer.src = URL.createObjectURL(new Blob(audioData, { type: 'audio/mp3' }));
+            audioPlayer.style.display = 'block';
+            audioPlayer.play();
+        }
+
+        startRecordingButton.addEventListener('click', startRecording);
+        stopRecordingButton.addEventListener('click', stopRecording);
+        playAudioButton.addEventListener('click', playAudio);
+
+
+        let recognition2 = new webkitSpeechRecognition();
+        recognition2.interimResults = true;
+        recognition2.onresult = (event) => {
+            var final_transcript = '';
+            var interim_transcript = '';
+
+            for (var i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    final_transcript += event.results[i][0].transcript;
+                    console.log(final_transcript)
+                    stopRecording();
+
+                    function clickSubmitButton() {
+                        submitButton.click();
+                        startRecordingButton.click();
+                    }
+                    setTimeout(clickSubmitButton, 100);
+                } else {
+                    interim_transcript += event.results[i][0].transcript;
+                    console.log(interim_transcript)
+                    stopRecordingTemp();
+
+                    function clickSubmitButtonTemp() {
+                        submitButton.click();
+                    }
+                    setTimeout(clickSubmitButtonTemp, 100);
+                }
+            }
+        };
+        ////////////
+
+        /*    readButton && readButton.addEventListener('click', () => {
+               const text = transcription.innerText;
+               const speech = new SpeechSynthesisUtterance();
+               speech.lang = 'en-US';
+               speech.text = text;
+   
+               speechSynthesis.speak(speech);
+           }); */
+
+        /*        document.addEventListener("DOMContentLoaded", () => {
+                   if (transcription.innerHTML.length > 0) {
+                       const text = transcription.innerText;
+                       const speech = new SpeechSynthesisUtterance();
+                       speech.lang = 'en-US';
+                       speech.text = text;
+       
+                       speechSynthesis.speak(speech);
+                   }
+               }) */
+
+
+
+        let paragraph = document.getElementById("myParagraph");
+
+        submitButton.addEventListener("click", () => {
+            let formData = new FormData();
+            formData.append("file", document.querySelector('#file_input').files[0])
+            console.log(document.querySelector('#file_input').files[0])
+            const postOptions = {
+                method: "POST",
+                files: formData,
+                body: formData
+            };
+            fetch("/saveaudio", postOptions)
+                .then(function (response) {
+                    if (response.ok) {
+                        return response.text();
+                    } else {
+                        throw new Error('Заявката не беше успешна.');
+                    }
+                    paragraph.textContent = response;
+                })
+                .then(function (data) {
+                    console.log(data)
+                    paragraph.textContent = data;
+                    /* fetch("/audio", { method: "GET" })
+                            .then(response => response.blob())
+                            .then((blob) => {
+                                const audioPlayer2 = document.getElementById('audio-player2');
+                                console.log(typeof blob)
+                                audioPlayer2.src = URL.createObjectURL(blob);
+                                audioPlayer2.play();
+                            }) */
+                })
+        })
+    </script>
+</body>
+
+</html>
