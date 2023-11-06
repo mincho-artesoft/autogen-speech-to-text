@@ -104,6 +104,12 @@
         let startRecordingButton = document.getElementById('startRecording');
 
 
+        let paragraph = document.getElementById("myParagraph");
+        
+        socket.addEventListener('message', ev => {
+        paragraph.textContent = ev.data;
+      });
+
         if (typeof AudioContext !== 'undefined') {
             audioContext = new AudioContext();
         } else if (typeof webkitAudioContext !== 'undefined') {
@@ -139,7 +145,7 @@
         async function startAndStopRecording() {
             await startRecording();
             while (true) {
-                await new Promise((resolve) => setTimeout(resolve, 200));
+                await new Promise((resolve) => setTimeout(resolve, 100));
                 await stopRecording();
             }
         }
@@ -147,8 +153,6 @@
 
         startRecordingButton.addEventListener('click', startAndStopRecording);
 
-
-        let paragraph = document.getElementById("myParagraph");
     </script>
 </body>
 
