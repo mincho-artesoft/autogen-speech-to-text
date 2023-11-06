@@ -1,32 +1,31 @@
-<!doctype html>
-<html>
-  <head>
-    <title>Flask-Sock Demo</title>
-  </head>
-  <body>
-    <h1>Flask-Sock Demo</h1>
-    <div id="log"></div>
-    <br>
-    <form id="form">
-      <label for="text">Input: </label>
-      <input type="text" id="text" autofocus>
-    </form>
-    <script>
-      const log = (text, color) => {
-        document.getElementById('log').innerHTML += `<span style="color: ${color}">${text}</span><br>`;
-      };
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Socket.IO and Flask Example</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.2.0/socket.io.js"></script>
+</head>
+<body>
+    <h1>Socket.IO and Flask Example</h1>
+    <div id="message-container"></div>
+    <input type="text" id="message-input" placeholder="Enter a message">
+    <button id="send-button">Send</button>
 
-      const socket = new WebSocket('ws://' + location.host + '/echo');
-      socket.addEventListener('message', ev => {
-        log('<<< ' + ev.data, 'blue');
-      });
-      document.getElementById('form').onsubmit = ev => {
-        ev.preventDefault();
-        const textField = document.getElementById('text');
-        log('>>> ' + textField.value, 'red');
-        socket.send(textField.value);
-        textField.value = '';
-      };
+    <script>
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+        socket.on('message', function(message) {
+            console.log(message)
+            var container = document.getElementById('message-container');
+            container.innerHTML += '<p>' + message + '</p>';
+        });
+
+        document.getElementById('send-button').addEventListener('click', function() {
+            var messageInput = document.getElementById('message-input');
+            var message = messageInput.value;
+            socket.emit('message', message);
+            messageInput.value = '';
+        });
     </script>
-  </body>
+</body>
 </html>

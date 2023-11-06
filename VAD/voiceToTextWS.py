@@ -121,7 +121,7 @@ def echo(sock):
            sf.write("audio2.wav", combined_data, samplerate)
         except:
            sf.write("audio2.wav", audio_data, samplerate)
-        sock.send(test)
+        sock.send(data)
         
 
 if __name__ == '__main__':
