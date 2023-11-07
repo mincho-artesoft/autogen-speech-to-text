@@ -138,7 +138,9 @@
         let audioData = [];
         let isReck = false;
         let paragraph = document.getElementById("myParagraph");
-        
+        let type = "none";
+        let count = 0;
+
         if (typeof AudioContext !== 'undefined') {
             audioContext = new AudioContext();
         } else if (typeof webkitAudioContext !== 'undefined') {
@@ -146,12 +148,26 @@
         } else {
             alert('AudioContext not supported');
         }
-        const socket = new WebSocket('ws://' + location.host + '/echo');
+        /*         const socket = new WebSocket('ws://' + location.host + '/echo');
+        
+                socket.addEventListener('message', ev => {
+                    paragraph.textContent = ev.data;
+                }); */
 
-        socket.addEventListener('message', ev => {
-        paragraph.textContent = ev.data;
-      });
 
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+        socket.on('message', function (message) {
+            console.log(message)
+            paragraph.textContent = message;
+        });
+
+        /*         document.getElementById('send-button').addEventListener('click', function () {
+                    var messageInput = document.getElementById('message-input');
+                    var message = messageInput.value;
+                    socket.emit('message', message);
+                    messageInput.value = '';
+                }); */
         async function startRecording() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -168,7 +184,15 @@
                 recorder.exportWAV(function (blob) {
                     let fileName = 'test.wav';
                     let file = new File([blob], fileName, { type: "audio/wav", lastModified: new Date().getTime() }, 'utf-8');
-                    socket.send(file);
+                    if(count == 0 ){
+                        type = "none"
+                    }else{
+                        count--;
+                    }
+                    console.log(count);
+                    socket.emit('message', { file: file, type: type });
+                       
+                    //  socket.send(file);
                     recorder.clear();
                     resolve();
                 });
@@ -178,7 +202,7 @@
         async function startAndStopRecording() {
             await startRecording();
             while (true) {
-                await new Promise((resolve) => setTimeout(resolve, 30));
+                await new Promise((resolve) => setTimeout(resolve, 10));
                 await stopRecording();
             }
         }
@@ -200,16 +224,23 @@
                     const indicatorColor = interpolateInferno(probs.isSpeech / 2)
                     document.body.style.setProperty("--indicator-color", indicatorColor)
                     if (!isReck) {
+                        type = "start"
+                        count++;
+                       // socket.emit('message', message);
                         console.log("start")
                         isReck = true
                     }
                 },
                 onSpeechEnd: (arr) => {
                     if (isReck) {
+                        type = "stop"
+                        count++;
+                        //socket.emit('message', message);
                         console.log("stop")
                         isReck = false
-                        let message = { type: "stop" }
-                        socket.send(JSON.stringify(message));
+
+                        //socket.send(JSON.stringify(message));
+
                     }
                     const wavBuffer = vad.utils.encodeWAV(arr)
                     const base64 = vad.utils.arrayBufferToBase64(wavBuffer)
