@@ -3,13 +3,9 @@ import soundfile as sf
 import torch
 from transformers import Speech2TextProcessor, Speech2TextForConditionalGeneration, WhisperProcessor, WhisperForConditionalGeneration, pipeline
 import librosa
-#import openai
 from pydub import AudioSegment
 from datasets import load_dataset
 import datetime
-
-
-#openai.api_key = 'sg'
 
 app = Flask(__name__, template_folder="templates")
 
@@ -65,11 +61,15 @@ def indexs():
         current_datetime = datetime.datetime.now()
         print("current_datetime")
         print(current_datetime)
-        prediction = pipe(audio_data_resampled.copy(), batch_size=8)["text"]
+        try:
+            prediction = pipe(audio_data_resampled.copy(), batch_size=8)["text"]
+        except Exception as e:
+            print(f"Error during ASR: {str(e)}")
         current_datetime2 = datetime.datetime.now()
-        print(current_datetime2-current_datetime)
+        print(current_datetime2 - current_datetime)
         print(prediction)
         return prediction
+
 
 
 @app.route('/audio', methods=['GET'])
