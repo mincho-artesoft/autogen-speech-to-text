@@ -131,15 +131,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.0/lame.all.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.2.0/socket.io.js"></script>
     <script type="module">
-        import { interpolateInferno } from "https://cdn.skypack.dev/d3-scale-chromatic@3"
 
         let audioContext;
         let recorder;
-        let audioData = [];
-        let isReck = false;
-        let paragraph = document.getElementById("myParagraph");
-        let type = "none";
-        let count = 0;
 
         if (typeof AudioContext !== 'undefined') {
             audioContext = new AudioContext();
@@ -148,20 +142,6 @@
         } else {
             alert('AudioContext not supported');
         }
-        /*         const socket = new WebSocket('ws://' + location.host + '/echo');
-        
-                socket.addEventListener('message', ev => {
-                    paragraph.textContent = ev.data;
-                }); */
-
-
-        var socket = io.connect('http://' + document.domain + ':' + location.port);
-
-        socket.on('message', function (message) {
-            console.log(message)
-            paragraph.textContent = message;
-        });
-
         /*         document.getElementById('send-button').addEventListener('click', function () {
                     var messageInput = document.getElementById('message-input');
                     var message = messageInput.value;

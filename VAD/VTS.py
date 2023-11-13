@@ -16,9 +16,17 @@ from IPython.display import Audio
 from pprint import pprint
 import certifi
 import os
-import threading
-import onnxruntime
 from flask_socketio import SocketIO
+import webrtcvad
+
+
+
+vad = webrtcvad.Vad()
+vad.set_mode(3)  # Aggressiveness mode (0 to 3)
+
+def perform_vad(audio_data):
+    is_speech = vad.is_speech(audio_data, sample_rate=16000)
+    return is_speech
 
 SAMPLING_RATE = 16000
 
